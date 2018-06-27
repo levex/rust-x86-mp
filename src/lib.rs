@@ -160,4 +160,113 @@ impl Iterator for EntryIterator {
     }
 }
 
+union MPPossibleEntries {
+    processor: ProcessorEntry,
+    bus: BusEntry,
+    ioapic: IOAPICEntry,
+    io_interrupt_assignment: IOInterruptAssignmentEntry,
+    local_interrupt_assignment: LocalInterruptAssignmentEntry,
+}
 
+pub struct MPEntry {
+    pub code: MPEntryCode,
+    entries: MPPossibleEntries,
+}
+
+impl MPEntry {
+    pub fn get_processor_entry(&self) -> Option<ProcessorEntry> {
+        if self.code == MPEntryCode::Processor {
+            Some(unsafe { self.entries.processor })
+        } else {
+            None
+        }
+    }
+
+    pub fn get_bus_entry(&self) -> Option<BusEntry> {
+        if self.code == MPEntryCode::Bus {
+            Some(unsafe { self.entries.bus })
+        } else {
+            None
+        }
+    }
+
+    pub fn get_ioapic_entry(&self) -> Option<IOAPICEntry> {
+        if self.code == MPEntryCode::IOAPIC {
+            Some(unsafe { self.entries.ioapic})
+        } else {
+            None
+        }
+    }
+
+    pub fn get_io_interrupt_assignment_entry(&self) -> Option<IOInterruptAssignmentEntry> {
+        if self.code == MPEntryCode::IOInterruptAssignment {
+            Some(unsafe { self.entries.io_interrupt_assignment })
+        } else {
+            None
+        }
+    }
+
+    pub fn get_local_interrupt_assignment_entry(&self) -> Option<LocalInterruptAssignmentEntry> {
+        if self.code == MPEntryCode::LocalInterruptAssignment {
+            Some(unsafe { self.entries.local_interrupt_assignment })
+        } else {
+            None
+        }
+    }
+}
+
+#[repr(C, packed)]
+#[derive(Clone, Copy, Debug)]
+pub struct ProcessorEntry {
+    pub entry_type: u8,
+    pub lapic_id: u8,
+    pub lapic_version: u8,
+    pub cpu_flags: u8,
+    pub cpu_signature: [u8; 2],
+    unused: [u8; 2],
+    pub feature_flags: u32,
+}
+
+#[repr(C, packed)]
+#[derive(Clone, Copy, Debug)]
+pub struct BusEntry {
+    pub entry_type: u8,
+    pub bus_id: u8,
+    pub bus_type_string: [u8; 6],
+}
+
+#[repr(C, packed)]
+#[derive(Clone, Copy, Debug)]
+pub struct IOAPICEntry {
+    pub entry_type: u8,
+    pub ioapic_id: u8,
+    pub ioapic_version: u8,
+    pub ioapic_flags: u8,
+    pub ioapic_address: u32,
+}
+
+#[repr(C, packed)]
+#[derive(Clone, Copy, Debug)]
+pub struct IOInterruptAssignmentEntry {
+    pub entry_type: u8,
+    pub interrupt_type: u8,
+    pub interrupt_mode: u8,
+    unused: u8,
+    pub source_bus_id: u8,
+    pub source_bus_irq: u8,
+    pub dest_ioapic_id: u8,
+    pub dest_ioapic_int: u8,
+}
+
+#[repr(C, packed)]
+#[derive(Clone, Copy, Debug)]
+pub struct LocalInterruptAssignmentEntry {
+    pub entry_type: u8,
+    pub interrupt_type: u8,
+    pub interrupt_mode: u8,
+    unused: u8,
+    pub source_bus_id: u8,
+    pub source_bus_irq: u8,
+    pub dest_ioapic_id: u8,
+    pub dest_ioapic_int: u8,
+}
