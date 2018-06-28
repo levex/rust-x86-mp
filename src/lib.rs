@@ -144,9 +144,9 @@ pub struct EntryIterator {
 }
 
 impl Iterator for EntryIterator {
-    type Item = MPEntryCode;
+    type Item = MPEntry;
 
-    fn next(&mut self) -> Option<MPEntryCode> {
+    fn next(&mut self) -> Option<MPEntry> {
         if self.entries_sofar >= self.total_entries {
             None
         } else {
@@ -155,7 +155,22 @@ impl Iterator for EntryIterator {
             let current_code: MPEntryCode = unsafe { MPEntryCode::from_u8(*current_ptr) };
             self.entries_sofar += 1;
             self.current_offset += current_code.length();
-            Some(current_code)
+            Some(unsafe {
+                match current_code {
+                    MPEntryCode::Processor => MPEntry { code: current_code,
+                        entries: MPPossibleEntries { processor: *(current_ptr as *const ProcessorEntry) }},
+                    MPEntryCode::Bus => MPEntry { code: current_code,
+                        entries: MPPossibleEntries { bus: *(current_ptr as *const BusEntry) }},
+                    MPEntryCode::IOAPIC => MPEntry { code: current_code,
+                        entries: MPPossibleEntries { ioapic: *(current_ptr as *const IOAPICEntry) }},
+                    MPEntryCode::IOInterruptAssignment => MPEntry { code: current_code,
+                        entries: MPPossibleEntries { io_interrupt_assignment: *(current_ptr as *const IOInterruptAssignmentEntry) }},
+                    MPEntryCode::LocalInterruptAssignment => MPEntry { code: current_code,
+                        entries: MPPossibleEntries { local_interrupt_assignment: *(current_ptr as *const LocalInterruptAssignmentEntry) }},
+                    MPEntryCode::Unknown => MPEntry { code: current_code, 
+                        entries: MPPossibleEntries { unknown: 0 }},
+                }
+            })
         }
     }
 }
@@ -166,6 +181,7 @@ union MPPossibleEntries {
     ioapic: IOAPICEntry,
     io_interrupt_assignment: IOInterruptAssignmentEntry,
     local_interrupt_assignment: LocalInterruptAssignmentEntry,
+    unknown: u8,
 }
 
 pub struct MPEntry {
