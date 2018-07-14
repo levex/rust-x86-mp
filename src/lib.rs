@@ -135,7 +135,7 @@ impl MPEntryCode {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct EntryIterator {
     table_location: usize,
     entries_sofar: usize,
